@@ -12,7 +12,7 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
-  'https://hvac-estimate-app.vercel.app',  
+  'https://hvac-estimate-app.vercel.app',  // Production URL - use this!
 ];
 
 app.use(cors({
