@@ -2,7 +2,7 @@ import type { FormData, DownloadFormat } from '../types/form.types';
 
 // Automatically detect environment and use correct API URL
 const API_BASE_URL = import.meta.env.PROD 
-  ? 'https://hvac-estimate-backend.onrender.com'
+  ? 'https://hvac-estimate-app.onrender.com'
   : 'http://localhost:3000';
 
 console.log('🔗 API Base URL:', API_BASE_URL);
