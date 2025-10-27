@@ -1,0 +1,123 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # Backend Tests and Build
+  backend:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    defaults:
+      run:
+        working-directory: ./server
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: './server/package-lock.json'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Check TypeScript compilation
+        run: npx tsc --noEmit
+      
+      - name: Run linter (if configured)
+        run: npm run lint --if-present
+      
+      - name: Run tests (if configured)
+        run: npm test --if-present
+      
+      - name: Build
+        run: npm run build --if-present
+
+  # Frontend Tests and Build
+  frontend:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    defaults:
+      run:
+        working-directory: ./client
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: './client/package-lock.json'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Check TypeScript compilation
+        run: npx tsc --noEmit
+      
+      - name: Run linter
+        run: npm run lint --if-present
+      
+      - name: Run tests (if configured)
+        run: npm test --if-present
+      
+      - name: Build production bundle
+        run: npm run build
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-${{ matrix.node-version }}
+          path: ./client/dist
+          retention-days: 7
+
+  # Deploy (only on main branch)
+  deploy:
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download frontend build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build-20.x
+          path: ./client/dist
+      
+      - name: Deploy to production
+        run: |
+          echo "🚀 Ready to deploy!"
+          echo "Add your deployment steps here (e.g., deploy to Vercel, Netlify, AWS, etc.)"
+      
+      # Example: Deploy to Vercel (uncomment and configure)
+      # - name: Deploy Frontend to Vercel
+      #   uses: amondnet/vercel-action@v25
+      #   with:
+      #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
+      #     vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+      #     vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+      #     working-directory: ./client
+      
+      # Example: Deploy Backend to Railway/Render (uncomment and configure)
+      # - name: Deploy Backend
+      #   run: |
+      #     # Add your backend deployment commands here
